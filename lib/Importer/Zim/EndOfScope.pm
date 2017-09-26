@@ -1,0 +1,125 @@
+
+package Importer::Zim::EndOfScope;
+
+# ABSTRACT: Import functions with compilation block scope
+
+use 5.010001;
+
+BEGIN {
+    require Importer::Zim::Base;
+    Importer::Zim::Base->VERSION('0.6.0');
+    our @ISA = qw(Importer::Zim::Base);
+}
+
+use B::Hooks::EndOfScope ();
+use Sub::Replace         ();
+
+use constant DEBUG => $ENV{IMPORTER_ZIM_DEBUG} || 0;
+
+sub import {
+    my $class = shift;
+
+    warn "$class->import(@_)\n" if DEBUG;
+    my @exports = $class->_prepare_args(@_);
+
+    my $caller = caller;
+    my $old    = Sub::Replace::sub_replace(
+        map { ; "${caller}::$_->{export}" => $_->{code} } @exports );
+
+    # Clean it up after a scope finished compilation
+    B::Hooks::EndOfScope::on_scope_end(
+        sub {
+            warn qq{Restoring @{[map qq{"$_"}, sort keys %$old]}\n}
+              if DEBUG;
+            Sub::Replace::sub_replace($old);
+        }
+    ) if %$old;
+}
+
+1;
+
+=encoding utf8
+
+=head1 SYNOPSIS
+
+    use Importer::Zim::EndOfScope 'Scalar::Util' => 'blessed';
+    use Importer::Zim::EndOfScope 'Scalar::Util' =>
+      ( 'blessed' => { -as => 'typeof' } );
+
+    use Importer::Zim::EndOfScope 'Mango::BSON' => ':bson'; 
+
+    use Importer::Zim::EndOfScope 'Foo' => { -version => '3.0' } => 'foo';
+
+    use Importer::Zim::EndOfScope 'SpaceTime::Machine' => [qw(robot rubber_pig)];
+
+=head1 DESCRIPTION
+
+    "Wait a minute! What planet is this?"
+      – Zim
+
+This is a backend for L<Importer::Zim> which makes
+imported symbols available during the compilation of
+the surrounding scope.
+
+Unlike L<Importer::Zim::Lexical>, it works for perls before 5.18.
+Unlike L<Importer::Zim::Lexical> which plays with lexical subs,
+this meddles with the symbol tables for a (hopefully short)
+time interval. (This time interval should be even shorter
+than the one that applies to L<Importer::Zim::Unit>.)
+
+=head1 HOW IT WORKS
+
+The statement
+
+    use Importer::Zim::EndOfScope 'Foo' => 'foo';
+
+works sort of
+
+    use B::Hooks::EndOfScope;
+
+    my $_OLD_SUBS;
+    BEGIN {
+        require Foo;
+        $_OLD_SUBS = Sub::Replace::sub_replace('foo' => \&Foo::foo);
+    }
+
+    on_scope_end {
+        Sub::Replace::sub_replace($_OLD_SUBS);
+    }
+
+That means:
+
+=over 4
+
+=item *
+
+Imported subroutines are installed into the caller namespace at compile time.
+
+=item *
+
+Imported subroutines are cleaned up after perl finished compiling
+the surrounding scope.
+
+=back
+
+See L<Sub::Replace> for a few gotchas about why this is not simply done
+with Perl statements such as
+
+    *foo = \&Foo::foo;
+
+=head1 DEBUGGING
+
+You can set the C<IMPORTER_ZIM_DEBUG> environment variable
+for get some diagnostics information printed to C<STDERR>.
+
+    IMPORTER_ZIM_DEBUG=1
+
+=head1 SEE ALSO
+
+L<Importer::Zim>
+
+L<B::Hooks::EndOfScope>
+
+L<Importer::Zim::Lexical>
+
+=cut

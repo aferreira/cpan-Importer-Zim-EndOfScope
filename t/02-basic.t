@@ -1,5 +1,4 @@
 
-use 5.018;
 use Test::More;
 
 package M1;

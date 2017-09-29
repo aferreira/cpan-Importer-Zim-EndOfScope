@@ -29,7 +29,7 @@ sub import {
     # Clean it up after a scope finished compilation
     B::Hooks::EndOfScope::on_scope_end(
         sub {
-            warn qq{Restoring @{[map qq{"$_"}, sort keys %$old]}\n}
+            warn qq{  Restoring @{[map qq{"$_"}, sort keys %$old]}\n}
               if DEBUG;
             Sub::Replace::sub_replace($old);
         }

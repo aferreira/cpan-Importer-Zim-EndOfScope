@@ -14,12 +14,12 @@ BEGIN {
 use B::Hooks::EndOfScope ();
 use Sub::Replace         ();
 
-use Importer::Zim::Utils 0.8.0 qw(DEBUG);
+use Importer::Zim::Utils 0.8.0 qw(DEBUG carp);
 
 sub import {
     my $class = shift;
 
-    warn "$class->import(@_)\n" if DEBUG;
+    carp "$class->import(@_)" if DEBUG;
     my @exports = $class->_prepare_args(@_);
 
     my $caller = caller;
@@ -36,7 +36,7 @@ sub import {
     ) if %$old;
 }
 
-no Importer::Zim::Utils qw(DEBUG);
+no Importer::Zim::Utils qw(DEBUG carp);
 
 1;
 

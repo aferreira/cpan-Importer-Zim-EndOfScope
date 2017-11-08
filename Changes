@@ -3,6 +3,8 @@ Release history for Importer-Zim-EndOfScope
 
 {{$NEXT}}
 
+    - Separate export_to()
+
 v0.2     2017-09-29 11:32:18-07:00 America/Los_Angeles
 
     - Produce DEBUG message with carp()

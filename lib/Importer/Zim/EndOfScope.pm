@@ -6,7 +6,7 @@ package Importer::Zim::EndOfScope;
 use 5.010001;
 
 use B::Hooks::EndOfScope ();
-use Sub::Replace         ();
+use Sub::Replace 0.2.0 ();
 
 use Importer::Zim::Utils 0.8.0 qw(DEBUG );
 
